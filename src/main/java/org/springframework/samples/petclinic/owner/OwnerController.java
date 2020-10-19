@@ -28,7 +28,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author Juergen Hoeller
@@ -40,6 +42,10 @@ import java.util.Map;
 class OwnerController {
 
 	private static final String VIEWS_OWNER_CREATE_OR_UPDATE_FORM = "owners/createOrUpdateOwnerForm";
+	private static final byte HAS_FULL_NAME = 0;
+	private static final byte HAS_NO_LAST_NAME = 1;
+	private static final byte HAS_NO_FIRST_NAME = 2;
+	private static final byte HAS_NO_NAME = 3;
 
 	private final OwnerRepository owners;
 
@@ -81,14 +87,33 @@ class OwnerController {
 
 	@GetMapping("/owners")
 	public String processFindForm(Owner owner, BindingResult result, Map<String, Object> model) {
+		byte nameCase = HAS_FULL_NAME;
+		Collection<Owner> results;
 
 		// allow parameterless GET request for /owners to return all records
-		if (owner.getLastName() == null) {
+		if(owner.getFirstName() == null || owner.getFirstName().equals("")) {
+			owner.setFirstName("");
+			nameCase |= HAS_NO_FIRST_NAME;
+		}
+		if (owner.getLastName() == null || owner.getLastName().equals("")) {
 			owner.setLastName(""); // empty string signifies broadest possible search
+			nameCase |= HAS_NO_LAST_NAME;
 		}
 
-		// find owners by last name
-		Collection<Owner> results = this.owners.findByLastName(owner.getLastName());
+		switch (nameCase){
+			case HAS_FULL_NAME:
+				results = this.owners.findByFirstAndLastName(owner.getFirstName(), owner.getLastName());
+				break;
+			case HAS_NO_LAST_NAME:
+				results = this.owners.findByFirstName(owner.getFirstName());
+				break;
+			case HAS_NO_FIRST_NAME:
+			case HAS_NO_NAME:
+			default:
+				results = this.owners.findByLastName(owner.getLastName());
+				break;
+		}
+
 		if (results.isEmpty()) {
 			// no owners found
 			result.rejectValue("lastName", "notFound", "not found");

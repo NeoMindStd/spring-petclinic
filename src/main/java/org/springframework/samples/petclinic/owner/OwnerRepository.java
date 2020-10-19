@@ -36,15 +36,38 @@ import org.springframework.transaction.annotation.Transactional;
 public interface OwnerRepository extends Repository<Owner, Integer> {
 
 	/**
+	 * Retrieve {@link Owner}s from the data store by first name, returning all owners
+	 * whose last name <i>starts</i> with the given name.
+	 * @param firstName Value to search for
+	 * @return a Collection of matching {@link Owner}s (or an empty Collection if none
+	 * found)
+	 */
+	@Query("SELECT DISTINCT owner FROM Owner owner left join fetch owner.pets WHERE owner.firstName LIKE %:firstName%")
+	@Transactional(readOnly = true)
+	Collection<Owner> findByFirstName(@Param("firstName") String firstName);
+
+	/**
 	 * Retrieve {@link Owner}s from the data store by last name, returning all owners
 	 * whose last name <i>starts</i> with the given name.
 	 * @param lastName Value to search for
 	 * @return a Collection of matching {@link Owner}s (or an empty Collection if none
 	 * found)
 	 */
-	@Query("SELECT DISTINCT owner FROM Owner owner left join fetch owner.pets WHERE owner.lastName LIKE :lastName%")
+	@Query("SELECT DISTINCT owner FROM Owner owner left join fetch owner.pets WHERE owner.lastName LIKE %:lastName%")
 	@Transactional(readOnly = true)
 	Collection<Owner> findByLastName(@Param("lastName") String lastName);
+
+	/**
+	 * Retrieve {@link Owner}s from the data store by last name, returning all owners
+	 * whose last name <i>starts</i> with the given name.
+	 * @param firstName value to search for
+	 * @param lastName Value to search for
+	 * @return a Collection of matching {@link Owner}s (or an empty Collection if none
+	 * found)
+	 */
+	@Query("SELECT DISTINCT owner FROM Owner owner left join fetch owner.pets WHERE owner.firstName LIKE %:firstName% AND owner.lastName LIKE %:lastName%")
+	@Transactional(readOnly = true)
+	Collection<Owner> findByFirstAndLastName(@Param("firstName") String firstName, @Param("lastName") String lastName);
 
 	/**
 	 * Retrieve an {@link Owner} from the data store by id.
